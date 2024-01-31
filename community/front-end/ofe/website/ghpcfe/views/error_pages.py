@@ -18,3 +18,11 @@ from django.shortcuts import render
 
 def custom_error_403(request, unused_exception):
     return render(request, '403.html', {})
+
+def custom_error_500(request, exception=False):
+    exception_error = request.META["ExceptionErr"]
+    return render(request, 'error500.html', {'erroutput':exception_error})
+
+def custom_error_404 (request, exception):
+    error_to_show = "Error 404: File not found"
+    return render (request, 'error404.html',{"erroutput":error_to_show})

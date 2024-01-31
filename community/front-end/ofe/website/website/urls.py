@@ -31,6 +31,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.conf.urls import handler404, handler500
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -55,3 +56,7 @@ urlpatterns += [
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/", include("allauth.urls")),
 ]
+
+# add custom error handlers for 404 and 500 errors
+handler404 = "ghpcfe.views.error_pages.custom_error_404"
+handler500 = "ghpcfe.views.error_pages.custom_error_500"
