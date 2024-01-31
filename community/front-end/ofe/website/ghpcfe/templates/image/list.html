@@ -116,11 +116,12 @@
   </table
   </div>
   {% else %}
-    <p>You have not created an image yet. Create one!</p>
+    <p>You have not created an image yet. Create or import one!</p>
   {% endif %}
 
   <br/>
   <a href="{% url 'image-create' %}" class="btn btn-primary">Create an image</a>
+  <a href="{% url 'image-import' %}" class="btn btn-primary">Import an image</a>
 {% endblock %}
 
 
