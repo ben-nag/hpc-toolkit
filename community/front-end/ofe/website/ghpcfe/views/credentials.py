@@ -30,7 +30,8 @@ from ..permissions import CredentialPermission, SuperUserRequiredMixin
 from ..cluster_manager import validate_credential
 from .. import grafana
 from grafana_api.grafana_api import GrafanaClientError
-
+from ..cluster_manager.credential_permissions import check_credential_permissions
+from django.shortcuts import render
 
 class CredentialListView(SuperUserRequiredMixin, generic.ListView):
     """Custom ListView for Credential model"""
@@ -163,7 +164,6 @@ class CredentialViewSet(viewsets.ModelViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class CredentialValidateAPIView(APIView):
     """Validate credential against cloud platform"""
 
@@ -172,3 +172,24 @@ class CredentialValidateAPIView(APIView):
         result = validate_credential.validate_credential("GCP", credential)
         res = {"validated": result}
         return JsonResponse(res)
+
+class CredentialPermissionsCheck(SuperUserRequiredMixin, generic.View):
+    '''
+    Check credential permissions compared to prefilled list
+    '''
+    model = Credential
+    template_name = "credential/permissions.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["navtab"] = "credential"
+        return context
+    
+    def get(self, request, **kwargs):
+        cred_ID = kwargs["pk"]
+        cred_obj = Credential.objects.get(id=1)
+        permission_obj = check_credential_permissions(cred_obj)
+        template_name = "credential/permissions.html"
+        state_list = ["ok", "required", "surplus"]
+        output = {"ID":cred_ID, "object":cred_obj,"permissions":permission_obj,"statelist":state_list}
+        return render(request, template_name, output)

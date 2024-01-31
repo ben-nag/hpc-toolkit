@@ -33,6 +33,7 @@ from .views.filesystems import *
 from .views.gcpfilestore import *
 from .views.grafana import GrafanaProxyView, GrafanaView
 from .views.asyncview import RunningTasksViewSet
+from .views.error_pages import *
 
 handler403 = "ghpcfe.views.error_pages.custom_error_403"
 
@@ -136,6 +137,11 @@ urlpatterns += [
         "benchmark/create/",
         BenchmarkCreateView.as_view(),
         name="benchmark-create",
+    ),
+    path(
+        "credential/permissions/<int:pk>",
+        CredentialPermissionsCheck.as_view(),
+        name="credential-permissions-check",
     ),
     path(
         "credential/update/<int:pk>",

@@ -1,0 +1,17 @@
+roles/resourcemanager.projectIamAdmin
+roles/aiplatform.admin
+roles/file.editor
+roles/compute.admin
+roles/bigquery.admin
+roles/cloudsql.admin 
+roles/compute.imageUser
+roles/iam.serviceAccountAdmin
+roles/iam.serviceAccountTokenCreator
+roles/iam.serviceAccountUser
+roles/monitoring.viewer 
+roles/pubsub.admin
+roles/secretmanager.admin
+roles/servicenetworking.networksAdmin
+roles/storage.admin
+roles/storage.objectViewer 
+roles/notebooks.admin
