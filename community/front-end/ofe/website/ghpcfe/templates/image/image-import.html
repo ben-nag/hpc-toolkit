@@ -21,26 +21,17 @@
     function showImportField(choice) {
       let textInput = document.getElementById("textInputContiner");
       let dropdown = document.getElementById("dropdownContainer");
-      let imgUpload = document.getElementById("imageuploadContainer");
       if (choice == "text") {
         textInput.style.display = "block";
         dropdown.style.display = "none";
-        imgUpload.style.display = "none";
       }
       else if (choice == "dropdown") {
         textInput.style.display = "none";
         dropdown.style.display = "block";
-        imgUpload.style.display = "none";
-      }
-      else if (choice == "upload") {
-        textInput.style.display = "none";
-        dropdown.style.display = "none";
-        imgUpload.style.display = "block";
       }
       else{
         textInput.style.display = "block";
-        dropdown.style.display = "none";
-        imgUpload.style.display = "none";        
+        dropdown.style.display = "none";    
       }
     }
     </script>
@@ -79,8 +70,6 @@
           <label for="textOption">Input image name manually</label>
           <input type="radio" id="dropdownOption" name="inputOption" value="dropdown" onclick="showImportField('dropdown')">
           <label for="dropdownOption">Select from uploaded images</label>
-          <input type="radio" id="dropdownOption" name="inputOption" value="upload" onclick="showImportField('upload')">
-          <label for="dropdownOption">Upload new image</label>
         </div>
         <div id="textInputContiner" class="form-group" style="display:block;" >
           <label for="textInputName">Name:</label>
@@ -96,17 +85,6 @@
           <select id="dropdown" name="dropdown" class="form-control">
             <option value="NULL">------</option>
           </select>
-        </div>
-        <div id="imageuploadContainer" class="form-group" style="display:none;">
-          <label for="imageupload">File:</label>
-          <input type="file" id="imageupload" name="imageupload" accept=".vmdk,.vhd" class="form-control">
-          <label for="textInputName">Name:</label>
-          <input type="text" id="textInputNameUpload" name="textInputNameUpload" class="form-control">
-          <small class="form-text text-muted">Enter the uploaded image name</small>
-          <label for="textInputFamily">Family:</label>
-          <input type="text" id="textInputFamilyUpload" name="textInputFamilyUpload" class="form-control">
-          <small class="form-text text-muted">Enter the family of the uploaded image
-          </small>
         </div>
         {% endif %}
       </div>

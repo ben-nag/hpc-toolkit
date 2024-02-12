@@ -297,9 +297,6 @@ class ImageImportView(LoginRequiredMixin, CreateView):
     template_name = "image/image-import.html"
 
     def get_success_url(self):
-        #image = self.object
-        #image.status = "r"
-        #success_url = reverse("backend-create-image", kwargs={"pk": image.pk})
         success_url = reverse("images")
         return success_url
 
@@ -311,8 +308,6 @@ class ImageImportView(LoginRequiredMixin, CreateView):
     def get_image_list(self):
         prexisting_images_list = []
         for cred in Credential.objects.all():
-            #print (cred)
-            #credentials = get_object_or_404(Credential, pk=1)
             prexisting_images = list_project_images(cred)
             prexisting_images_list += prexisting_images
         return prexisting_images_list
@@ -328,18 +323,12 @@ class ImageImportView(LoginRequiredMixin, CreateView):
     
     # Set currently logged-in user as owner.
     def form_valid(self, form):
-        print("\n\n\n\n\nDATA:",form.data)
-        print("\n\n\n\n\nFIELDS:",form.fields)
         form.instance.owner = self.request.user
         form.instance.source_image_project = "Imported" #form.cleaned_data['name']
         form.instance.source_image_family = "Imported" #form.cleaned_data['family']
         selected_cred_id = int(form.data["cloud_credential"])
-        #selected_cred_obj = Credential.objects.get(id=selected_cred_id)
         selected_cred_obj = get_object_or_404(Credential, pk=selected_cred_id)
-        print("\n\n\n\n\CRED:",selected_cred_obj)
-        print("CRED - ",selected_cred_obj.__dict__)
         usr_input_select = form.data["inputOption"]
-        print("input",usr_input_select)
         if usr_input_select == "text":
             form_name = form.data["textInputName"]
             form_family = form.data["textInputFamily"]
@@ -347,36 +336,20 @@ class ImageImportView(LoginRequiredMixin, CreateView):
             image_list = form.data["dropdown"].split(",")
             form_name = image_list[1]
             form_family = image_list[3]      
-        elif usr_input_select == "upload":
-            form_name = form.data["textInputNameUpload"]
-            form_family = form.data["textInputFamilyUpload"]
-            print("\n\n\n\n\nFIELDS:",form.files)
-            img_upload_status = upload_image(selected_cred_obj,form.files["imageupload"],form_name,form_family)
-            if img_upload_status != True:
-                messages.error(self.request, img_upload_status)
-            else:
-                messages.error(self.request, "Not Implemented yet :'(")
-            return self.form_invalid(form)
         else:
             messages.error(self.request, 'Please choose how you want to select an image')
             return self.form_invalid(form)
-        
-        if form_name != "" and form_name != "":
+        if form_name != "" and form_family != "":
             form.instance.name = form_name
             form.instance.family = form_family
         else:
             messages.error(self.request, 'Please enter an image and family name')
             return self.form_invalid(form)
-
-        print("STOPCHECK1")
         image_isvalid = verify_image(selected_cred_obj,form_name,form_family)
-        print("STOPCHECK2")
         if image_isvalid:
             form.instance.status = "r"
         else:
             messages.error(self.request, 'Image name/family does not match any existing images, using given credential')
             return self.form_invalid(form)    
-
-
         return super().form_valid(form)
     
