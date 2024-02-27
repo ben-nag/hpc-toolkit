@@ -164,6 +164,9 @@ document.addEventListener("DOMContentLoaded", function() {
             if (response.success) {
               // Reload the page
               window.location.reload();
+              if (response.import) {
+              window.alert("Imported image has been deleted from OFE, but not from GCP. Please delete the imported image manually if needed.")
+              }
             }
           }
         };

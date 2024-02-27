@@ -226,10 +226,14 @@ class ImageDeleteView(UserPassesTestMixin, generic.View):
 
     def post(self, request, *args, **kwargs):
         image = Image.objects.get(pk=self.kwargs['pk'])
-        img_backend = ImageBackend(image)
-        img_backend.delete_image()
-        image.delete()
-        response = {'success': True}
+        if image.source_image_project == "Imported":
+            image.delete()
+            response = {'success': True, 'import': True}
+        else:
+            img_backend = ImageBackend(image)
+            img_backend.delete_image()
+            image.delete()
+            response = {'success': True}
         return JsonResponse(response)
     
     
