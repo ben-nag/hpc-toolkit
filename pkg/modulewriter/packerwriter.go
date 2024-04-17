@@ -47,36 +47,27 @@ func printPackerInstructions(w io.Writer, groupPath string, subPath string, prin
 }
 
 func writePackerAutovars(vars map[string]cty.Value, dst string) error {
-	packerAutovarsPath := filepath.Join(dst, packerAutoVarFilename)
-	err := WriteHclAttributes(vars, packerAutovarsPath)
-	return err
+	return WriteHclAttributes(vars, filepath.Join(dst, packerAutoVarFilename))
 }
 
-// writeDeploymentGroup writes any needed files to the top and module levels
+// writeGroup writes any needed files to the top and module levels
 // of the blueprint
-func (w PackerWriter) writeDeploymentGroup(
-	dc config.DeploymentConfig,
+func (w PackerWriter) writeGroup(
+	bp config.Blueprint,
 	grpIdx int,
 	groupPath string,
 	instructionsFile io.Writer,
 ) error {
-	depGroup := dc.Config.DeploymentGroups[grpIdx]
-	igcInputs := map[string]bool{}
+	g := bp.Groups[grpIdx]
 
-	for _, mod := range depGroup.Modules {
-		pure := config.Dict{}
+	for _, mod := range g.Modules {
+		pure := map[string]cty.Value{}
 		for setting, v := range mod.Settings.Items() {
-			igcRefs := config.FindIntergroupReferences(v, mod, dc.Config)
-			if len(igcRefs) == 0 {
-				pure.Set(setting, v)
-			}
-			for _, r := range igcRefs {
-				n := config.AutomaticOutputName(r.Name, r.Module)
-				igcInputs[n] = true
+			if len(config.FindIntergroupReferences(v, mod, bp)) == 0 {
+				pure[setting] = v
 			}
 		}
-
-		av, err := pure.Eval(dc.Config)
+		av, err := config.NewDict(pure).Eval(bp)
 		if err != nil {
 			return err
 		}
@@ -89,7 +80,7 @@ func (w PackerWriter) writeDeploymentGroup(
 		if err = writePackerAutovars(av.Items(), modPath); err != nil {
 			return err
 		}
-		hasIgc := len(pure.Items()) < len(mod.Settings.Items())
+		hasIgc := len(pure) < len(mod.Settings.Items())
 		printPackerInstructions(instructionsFile, groupPath, ds, hasIgc)
 	}
 

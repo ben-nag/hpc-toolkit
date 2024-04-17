@@ -42,9 +42,9 @@ func getErrorReason(err googleapi.Error) (string, map[string]interface{}) {
 }
 
 func newDisabledServiceError(title string, name string, pid string) error {
-	return hint(
-		fmt.Errorf("%s service is disabled in project %s", title, pid),
-		fmt.Sprintf("%s can be enabled at https://console.cloud.google.com/apis/library/%s?project=%s", title, name, pid))
+	return config.HintError{
+		Hint: fmt.Sprintf("%s can be enabled at https://console.cloud.google.com/apis/library/%s?project=%s", title, name, pid),
+		Err:  fmt.Errorf("%s service is disabled in project %s", title, pid)}
 }
 
 func handleServiceUsageError(err error, pid string) error {
@@ -180,22 +180,21 @@ func TestZoneInRegion(projectID string, zone string, region string) error {
 }
 
 func testApisEnabled(bp config.Blueprint, inputs config.Dict) error {
-	if err := checkInputs(inputs, []string{}); err != nil {
+	if err := checkInputs(inputs, []string{"project_id"}); err != nil {
 		return err
 	}
-	p, err := bp.ProjectID()
+	m, err := inputsAsStrings(inputs)
 	if err != nil {
 		return err
 	}
 	apis := map[string]bool{}
-	bp.WalkModules(func(m *config.Module) error {
+	bp.WalkModulesSafe(func(_ config.ModulePath, m *config.Module) {
 		services := m.InfoOrDie().Metadata.Spec.Requirements.Services
 		for _, api := range services {
 			apis[api] = true
 		}
-		return nil
 	})
-	return TestApisEnabled(p, maps.Keys(apis))
+	return TestApisEnabled(m["project_id"], maps.Keys(apis))
 }
 
 func testProjectExists(bp config.Blueprint, inputs config.Dict) error {

@@ -158,7 +158,6 @@ variable "login_nodes" {
 ############
 # NODESETS #
 ############
-
 variable "nodeset" {
   description = "Define nodesets, as a list."
   type = list(object({
@@ -184,22 +183,22 @@ variable "nodeset" {
     disk_type              = optional(string)
     enable_confidential_vm = optional(bool, false)
     enable_placement       = optional(bool, false)
-    enable_public_ip       = optional(bool, false)
     enable_oslogin         = optional(bool, true)
     enable_shielded_vm     = optional(bool, false)
     gpu = optional(object({
       count = number
       type  = string
     }))
-    instance_template   = optional(string)
-    labels              = optional(map(string), {})
-    machine_type        = optional(string)
-    metadata            = optional(map(string), {})
-    min_cpu_platform    = optional(string)
-    network_tier        = optional(string, "STANDARD")
-    on_host_maintenance = optional(string)
-    preemptible         = optional(bool, false)
-    region              = optional(string)
+    instance_template    = optional(string)
+    labels               = optional(map(string), {})
+    machine_type         = optional(string)
+    maintenance_interval = optional(string)
+    metadata             = optional(map(string), {})
+    min_cpu_platform     = optional(string)
+    network_tier         = optional(string, "STANDARD")
+    on_host_maintenance  = optional(string)
+    preemptible          = optional(bool, false)
+    region               = optional(string)
     service_account = optional(object({
       email  = optional(string)
       scopes = optional(list(string), ["https://www.googleapis.com/auth/cloud-platform"])
@@ -213,26 +212,41 @@ variable "nodeset" {
     source_image_project = optional(string)
     source_image         = optional(string)
     subnetwork_self_link = string
-    spot                 = optional(bool, false)
-    tags                 = optional(list(string), [])
-    termination_action   = optional(string)
-    zones                = optional(list(string), [])
-    zone_target_shape    = optional(string, "ANY_SINGLE_ZONE")
+    additional_networks = optional(list(object({
+      network            = string
+      subnetwork         = string
+      subnetwork_project = string
+      network_ip         = string
+      access_config = list(object({
+        nat_ip       = string
+        network_tier = string
+      }))
+      ipv6_access_config = list(object({
+        network_tier = string
+      }))
+    })))
+    access_config = optional(list(object({
+      nat_ip       = string
+      network_tier = string
+    })))
+    spot               = optional(bool, false)
+    tags               = optional(list(string), [])
+    termination_action = optional(string)
+    zones              = optional(list(string), [])
+    zone_target_shape  = optional(string, "ANY_SINGLE_ZONE")
+    reservation_name   = optional(string)
+    startup_script = optional(list(object({
+      filename = string
+    content = string })), [])
   }))
   default = []
-
-  validation {
-    condition     = length(distinct([for x in var.nodeset : x.nodeset_name])) == length(var.nodeset)
-    error_message = "All nodesets must have a unique name."
-  }
 }
 
-# REVIEWER_NOTE: copied from V6 cluster module as is
 variable "nodeset_tpu" {
   description = "Define TPU nodesets, as a list."
   type = list(object({
     node_count_static      = optional(number, 0)
-    node_count_dynamic_max = optional(number, 1)
+    node_count_dynamic_max = optional(number, 5)
     nodeset_name           = string
     enable_public_ip       = optional(bool, false)
     node_type              = string
@@ -245,7 +259,7 @@ variable "nodeset_tpu" {
     })
     tf_version   = string
     preemptible  = optional(bool, false)
-    preserve_tpu = optional(bool, true)
+    preserve_tpu = optional(bool, false)
     zone         = string
     data_disks   = optional(list(string), [])
     docker_image = optional(string, "")
@@ -254,13 +268,20 @@ variable "nodeset_tpu" {
       email  = optional(string)
       scopes = optional(list(string), ["https://www.googleapis.com/auth/cloud-platform"])
     }))
+    project_id = string
+    reserved   = optional(string, false)
   }))
   default = []
+}
 
-  validation {
-    condition     = length(distinct([for x in var.nodeset_tpu : x.nodeset_name])) == length(var.nodeset_tpu)
-    error_message = "All TPU nodesets must have a unique name."
-  }
+
+variable "nodeset_dyn" {
+  description = "Defines dynamic nodesets, as a list."
+  type = list(object({
+    nodeset_name    = string
+    nodeset_feature = string
+  }))
+  default = []
 }
 
 #############
@@ -272,15 +293,8 @@ variable "partitions" {
 Cluster partitions as a list. See module slurm_partition.
 EOD
   type = list(object({
-    default              = optional(bool, false)
-    enable_job_exclusive = optional(bool, false)
-    network_storage = optional(list(object({
-      server_ip     = string
-      remote_mount  = string
-      local_mount   = string
-      fs_type       = string
-      mount_options = string
-    })), [])
+    default               = optional(bool, false)
+    enable_job_exclusive  = optional(bool, false)
     partition_conf        = optional(map(string), {})
     partition_name        = string
     partition_nodeset     = optional(list(string), [])
@@ -303,13 +317,13 @@ EOD
 
 variable "enable_devel" {
   type        = bool
-  description = "Enables development mode. Not for production use."
-  default     = false
+  description = "Enables development mode."
+  default     = true
 }
 
 variable "enable_debug_logging" {
   type        = bool
-  description = "Enables debug logging mode. Not for production use."
+  description = "Enables debug logging mode."
   default     = false
 }
 
@@ -497,7 +511,6 @@ EOD
 
 variable "cloudsql" {
   description = <<EOD
-NOT SUPPORTED YET.
 Use this database instead of the one on the controller.
   server_ip : Address of the database server.
   user      : The user to access the database as.

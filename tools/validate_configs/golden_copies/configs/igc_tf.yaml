@@ -19,7 +19,14 @@ vars:
   project_id:  #
   deployment_name: igc-tf-test
   region: us-east4
-  zone: us-east4-c
+  zone: $(vars.region)-c
+  connect_mode_file_path: $(ghpc_stage("files/connect_mode.txt"))
+
+
+terraform_backend_defaults:
+ type: gcs
+ configuration:
+   bucket: $(vars.zone)  
 
 deployment_groups:
 - group: zero
@@ -36,3 +43,4 @@ deployment_groups:
     settings:
       local_mount: /home
       name: $(network0.subnetwork_name)
+      connect_mode: $(file(vars.connect_mode_file_path))

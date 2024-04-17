@@ -113,7 +113,13 @@ EOT
 }
 
 variable "install_cloud_ops_agent" {
-  description = "Run Google Ops Agent installation script if set to true."
+  description = "Warning: Consider using `install_stackdriver_agent` for better performance. Run Google Ops Agent installation script if set to true."
+  type        = bool
+  default     = false
+}
+
+variable "install_stackdriver_agent" {
+  description = "Run Google Stackdriver Agent installation script if set to true. Preferred over ops agent for performance."
   type        = bool
   default     = false
 }
@@ -160,8 +166,15 @@ variable "ansible_virtualenv_path" {
 }
 
 variable "http_proxy" {
-  description = "Web (http and https) proxy configuration for pip, apt, and yum/dnf"
+  description = "Web (http and https) proxy configuration for pip, apt, and yum/dnf and interactive shells"
   type        = string
   default     = ""
+  nullable    = false
+}
+
+variable "http_no_proxy" {
+  description = "Domains for which to disable http_proxy behavior. Honored only if var.http_proxy is set"
+  type        = string
+  default     = ".google.com,.googleapis.com,metadata.google.internal,localhost,127.0.0.1"
   nullable    = false
 }

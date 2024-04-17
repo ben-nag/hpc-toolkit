@@ -13,7 +13,10 @@
 # limitations under the License.
 
 variable "name" {
-  description = "Name of the nodeset. Automatically populated by the module id if not set"
+  description = <<-EOD
+    Name of the nodeset. Automatically populated by the module id if not set. 
+    If setting manually, ensure a unique value across all nodesets.
+    EOD
   type        = string
 }
 
@@ -30,9 +33,9 @@ variable "node_count_static" {
 }
 
 variable "node_count_dynamic_max" {
-  description = "Maximum number of dynamic nodes allowed in this partition."
+  description = "Maximum number of auto-scaling nodes allowed in this partition."
   type        = number
-  default     = 1
+  default     = 10
 }
 
 ## VM Definition
@@ -76,7 +79,7 @@ variable "instance_image" {
     EOD
   type        = map(string)
   default = {
-    family  = "slurm-gcp-6-1-hpc-rocky-linux-8"
+    family  = "slurm-gcp-6-4-hpc-rocky-linux-8"
     project = "schedmd-slurm-public"
   }
 
@@ -372,4 +375,64 @@ EOD
 variable "subnetwork_self_link" {
   type        = string
   description = "Subnet to deploy to."
+}
+
+variable "additional_networks" {
+  description = "Additional network interface details for GCE, if any."
+  default     = []
+  type = list(object({
+    network            = string
+    subnetwork         = string
+    subnetwork_project = string
+    network_ip         = string
+    nic_type           = string
+    stack_type         = string
+    queue_count        = number
+    access_config = list(object({
+      nat_ip       = string
+      network_tier = string
+    }))
+    ipv6_access_config = list(object({
+      network_tier = string
+    }))
+    alias_ip_range = list(object({
+      ip_cidr_range         = string
+      subnetwork_range_name = string
+    }))
+  }))
+}
+
+variable "access_config" {
+  description = "Access configurations, i.e. IPs via which the VM instance can be accessed via the Internet."
+  type = list(object({
+    nat_ip       = string
+    network_tier = string
+  }))
+  default = []
+}
+
+variable "reservation_name" {
+  description = <<-EOD
+    Sets reservation affinity for instances created from this nodeset.
+  EOD
+  type        = string
+  default     = null
+}
+
+variable "maintenance_interval" {
+  description = <<-EOD
+    Sets the maintenance interval for instances in this nodeset.
+    See https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance#maintenance_interval.
+  EOD
+  type        = string
+  default     = null
+}
+
+variable "startup_script" {
+  description = <<-EOD
+    Startup script used by VMs in this nodeset.
+    NOTE: will be executed after `compute_startup_script` defined on controller module.
+  EOD
+  type        = string
+  default     = "# no-op"
 }

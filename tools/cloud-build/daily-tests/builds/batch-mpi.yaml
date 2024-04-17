@@ -13,6 +13,18 @@
 # limitations under the License.
 
 ---
+tags:
+- m.batch-job-template
+- m.batch-login-node
+- m.filestore
+- m.pre-existing-vpc
+- m.spack-execute
+- m.spack-setup
+- m.startup-script
+- m.vm-instance
+- batch
+- spack
+
 timeout: 14400s  # 4hr
 availableSecrets:
   secretManager:
@@ -62,7 +74,7 @@ steps:
     echo '  - id: wait'                                           >> $${SG_EXAMPLE}
     echo '    source: community/modules/scripts/wait-for-startup' >> $${SG_EXAMPLE}
     echo '    settings:'                                          >> $${SG_EXAMPLE}
-    echo '      instance_name: ((module.spack-builder.name[0]))'  >> $${SG_EXAMPLE}
+    echo '      instance_name: $(spack-builder.name[0])'          >> $${SG_EXAMPLE}
     echo '      timeout: 2400'                                    >> $${SG_EXAMPLE}
 
     ansible-playbook tools/cloud-build/daily-tests/ansible_playbooks/base-integration-test.yml \

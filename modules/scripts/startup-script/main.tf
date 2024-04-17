@@ -20,11 +20,16 @@ locals {
 }
 
 locals {
-  ops_agent_installer = var.install_cloud_ops_agent ? [{
-    type        = "shell"
-    source      = "${path.module}/files/install_cloud_ops_agent.sh"
-    destination = "install_cloud_ops_agent_automatic.sh"
-  }] : []
+  monitoring_agent_installer = (
+    var.install_cloud_ops_agent || var.install_stackdriver_agent ?
+    [{
+      type        = "shell"
+      source      = "${path.module}/files/install_monitoring_agent.sh"
+      destination = "install_monitoring_agent_automatic.sh"
+      args        = var.install_cloud_ops_agent ? "ops" : "legacy" # install legacy (stackdriver)
+    }] :
+    []
+  )
 
   warnings = [
     {
@@ -65,12 +70,24 @@ locals {
     }
   ] : []
 
-  proxy_runner = var.http_proxy == "" ? [] : [{
-    type        = "shell"
-    source      = "${path.module}/files/configure_proxy.sh"
-    destination = "configure_proxy.sh"
-    args        = var.http_proxy
-  }]
+  proxy_runner = var.http_proxy == "" ? [] : [
+    {
+      type        = "data"
+      destination = "/etc/profile.d/http_proxy.sh"
+      content     = <<-EOT
+        #!/bin/bash
+        export http_proxy=${var.http_proxy}
+        export https_proxy=${var.http_proxy}
+        export NO_PROXY=${var.http_no_proxy}
+        EOT
+    },
+    {
+      type        = "shell"
+      source      = "${path.module}/files/configure_proxy.sh"
+      destination = "configure_proxy.sh"
+      args        = var.http_proxy
+    }
+  ]
 
   has_ansible_runners = anytrue([for r in var.runners : r.type == "ansible-local"]) || local.configure_ssh
   install_ansible     = var.install_ansible == null ? local.has_ansible_runners : var.install_ansible
@@ -84,7 +101,7 @@ locals {
   runners = concat(
     local.warnings,
     local.proxy_runner,
-    local.ops_agent_installer,
+    local.monitoring_agent_installer,
     local.ansible_installer,
     local.configure_ssh_runners,
     var.runners
@@ -99,9 +116,11 @@ locals {
   storage_bucket_name       = coalesce(one(google_storage_bucket.configs_bucket[*].name), local.user_provided_bucket_name)
 
   load_runners = templatefile(
-    "${path.module}/templates/startup-script-custom.tpl",
+    "${path.module}/templates/startup-script-custom.tftpl",
     {
-      bucket = local.storage_bucket_name,
+      bucket     = local.storage_bucket_name,
+      http_proxy = var.http_proxy,
+      no_proxy   = var.http_no_proxy,
       runners = [
         for runner in local.runners : {
           object      = google_storage_bucket_object.scripts[basename(runner["destination"])].output_name
@@ -166,6 +185,13 @@ resource "google_storage_bucket_object" "scripts" {
   timeouts {
     create = "10m"
     update = "10m"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = !(var.install_cloud_ops_agent && var.install_stackdriver_agent)
+      error_message = "Only one of var.install_stackdriver_agent or var.install_cloud_ops_agent can be set. Stackdriver is recommended for best performance."
+    }
   }
 }
 

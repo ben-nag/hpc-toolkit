@@ -84,10 +84,11 @@ locals {
     filename = "ghpc_startup.sh"
     content  = var.compute_startup_script
   }]
+  nodeset_startup_scripts = { for k, v in local.nodeset_map : k => v.startup_script }
 }
 
 module "slurm_files" {
-  source = "github.com/GoogleCloudPlatform/slurm-gcp.git//terraform/slurm_cluster/modules/slurm_files?ref=6.2.0"
+  source = "github.com/GoogleCloudPlatform/slurm-gcp.git//terraform/slurm_cluster/modules/slurm_files?ref=6.4.3&depth=1"
 
   project_id         = var.project_id
   slurm_cluster_name = local.slurm_cluster_name
@@ -104,6 +105,7 @@ module "slurm_files" {
 
   controller_startup_scripts         = local.ghpc_startup_script_controller
   controller_startup_scripts_timeout = var.controller_startup_scripts_timeout
+  nodeset_startup_scripts            = local.nodeset_startup_scripts
   compute_startup_scripts            = local.ghpc_startup_script_compute
   compute_startup_scripts_timeout    = var.compute_startup_scripts_timeout
   login_startup_scripts              = local.ghpc_startup_script_login
@@ -125,6 +127,7 @@ module "slurm_files" {
   partitions  = values(module.slurm_partition)[*]
   nodeset     = values(module.slurm_nodeset)[*]
   nodeset_tpu = values(module.slurm_nodeset_tpu)[*]
+  nodeset_dyn = values(module.slurm_nodeset_dyn)[*]
 
   depends_on = [module.bucket]
 }
