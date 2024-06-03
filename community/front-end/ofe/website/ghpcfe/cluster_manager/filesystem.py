@@ -91,11 +91,15 @@ def create_filesystem(fs: Filesystem) -> None:
 
 def _run_ghpc(target_dir: Path) -> None:
     ghpc_path = "/opt/gcluster/hpc-toolkit/ghpc"
-
+ 
     try:
         logger.info("Invoking ghpc create")
         log_out_fn = target_dir / "ghpc_create_log.stdout"
         log_err_fn = target_dir / "ghpc_create_log.stderr"
+ 
+        env = os.environ.copy()
+        env['GOOGLE_APPLICATION_CREDENTIALS'] = self._get_credentials_file()
+ 
         with log_out_fn.open("wb") as log_out:
             with log_err_fn.open("wb") as log_err:
                 subprocess.run(
@@ -104,6 +108,7 @@ def _run_ghpc(target_dir: Path) -> None:
                     stdout=log_out,
                     stderr=log_err,
                     check=True,
+                    env=env,
                 )
     except subprocess.CalledProcessError as cpe:
         logger.error("ghpc exec failed", exc_info=cpe)
